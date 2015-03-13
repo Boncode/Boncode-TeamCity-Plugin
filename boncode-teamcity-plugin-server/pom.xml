@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>boncode-teamcity-plugin</artifactId>
+    <groupId>nl.bon-code</groupId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>boncode-teamcity-plugin-server</artifactId>
+  <packaging>jar</packaging>
+  <dependencies>
+
+    <dependency>
+      <groupId>nl.bon-code</groupId>
+      <artifactId>boncode-teamcity-plugin-common</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jetbrains.teamcity</groupId>
+      <artifactId>server-api</artifactId>
+      <version>${teamcity-version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+       <groupId>org.jetbrains.teamcity</groupId>
+       <artifactId>tests-support</artifactId>
+       <version>${teamcity-version}</version>
+       <scope>test</scope>
+    </dependency>
+
+      <dependency>
+          <groupId>org.ijsberg</groupId>
+          <artifactId>iglu</artifactId>
+          <version>1.0.5-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+          <groupId>org.ijsberg</groupId>
+          <artifactId>iglu-common</artifactId>
+          <version>0.9.4-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+          <groupId>org.ijsberg</groupId>
+          <artifactId>iglu-util</artifactId>
+          <version>0.9.3-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+          <groupId>org.ijsberg</groupId>
+          <artifactId>iglu-http</artifactId>
+          <version>0.9.3-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+          <groupId>nl.ijsberg</groupId>
+          <artifactId>analysis-infrastructure</artifactId>
+          <version>0.9.0-SNAPSHOT</version>
+      </dependency>
+
+  </dependencies>
+</project>
