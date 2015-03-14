@@ -46,17 +46,12 @@
           <artifactId>iglu-util</artifactId>
           <version>0.9.3-SNAPSHOT</version>
       </dependency>
-      <dependency>
+      <!--dependency>
           <groupId>org.ijsberg</groupId>
           <artifactId>iglu-http</artifactId>
           <version>0.9.3-SNAPSHOT</version>
-      </dependency>
+      </dependency-->
 
-      <dependency>
-          <groupId>nl.ijsberg</groupId>
-          <artifactId>analysis-infrastructure</artifactId>
-          <version>0.9.0-SNAPSHOT</version>
-      </dependency>
 
   </dependencies>
 
