@@ -1,0 +1,12 @@
+
+*.iml
+
+*.class
+
+boncode-teamcity-plugin-server/target/*
+
+boncode-teamcity-plugin-agent/target/*
+
+boncode-teamcity-plugin-common/target/*
+
+
