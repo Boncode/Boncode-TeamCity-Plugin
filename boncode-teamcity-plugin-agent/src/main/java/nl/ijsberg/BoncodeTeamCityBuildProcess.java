@@ -48,13 +48,19 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess, org.ijsberg.ig
 				analysisProperties,
 				monitorUploadDirectory,
 				sourceRoot);
+
 	}
 
 	public void start() throws RunBuildException {
 		Loggers.AGENT.info("Starting Boncode analysis");
 		//logger.info("Starting Boncode analysis...");
 
-		new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, monitorDownloadDirectory, this).perform(sourceRoot);
+        boolean result = new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, monitorDownloadDirectory, this).perform(sourceRoot);
+        if(result){
+            this.isFinished();
+        } else {
+            this.isInterrupted();
+        }
 
 	}
 
