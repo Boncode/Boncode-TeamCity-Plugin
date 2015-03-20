@@ -6,34 +6,35 @@ import jetbrains.buildServer.agent.BuildProcess;
 import jetbrains.buildServer.agent.BuildRunnerContext;
 import jetbrains.buildServer.log.Loggers;
 import nl.ijsberg.analysis.server.buildserver.BuildServerToMonitorLink;
-import org.apache.log4j.Logger;
 import org.ijsberg.iglu.logging.LogEntry;
+import org.ijsberg.iglu.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
 /**
  */
-public class BoncodeTeamCityBuildProcess implements BuildProcess, org.ijsberg.iglu.logging.Logger {
+public class BoncodeTeamCityBuildProcess implements BuildProcess {
 
 	private BuildRunnerContext context;
-
-	private static final Logger logger = Logger.getLogger(BoncodeTeamCityBuildProcess.class);
 
 	private String monitorUploadDirectory;
 	private String analysisProperties;
 	private String sourceRoot;
 	private String checkoutDir;
+	
+	private Logger logger;
 
 
 
-	public BoncodeTeamCityBuildProcess(BuildRunnerContext context) {
+	public BoncodeTeamCityBuildProcess(BuildRunnerContext context, Logger logger) {		
 		this.context = context;
+		this.logger = logger;
 		Map<String, String> configParameters = context.getConfigParameters();
 		Map<String, String> buildParameters = context.getConfigParameters();
-		Loggers.AGENT.info("config parameters: " + configParameters);
-		Loggers.AGENT.info("build parameters: " + buildParameters);
-		Loggers.AGENT.info("Checkout dir: " + context.getBuild().getCheckoutDirectory());
+		logger.log(new LogEntry("config parameters: " + configParameters));
+		logger.log(new LogEntry("build parameters: " + buildParameters));
+		logger.log(new LogEntry("Checkout dir: " + context.getBuild().getCheckoutDirectory()));
 
 		checkoutDir = context.getBuild().getCheckoutDirectory().getAbsolutePath();
 		sourceRoot = checkoutDir + "/" + buildParameters.get(BuildServerToMonitorLink.SOURCE_ROOT);
@@ -47,50 +48,32 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess, org.ijsberg.ig
 	}
 
 	public void start() throws RunBuildException {
-		Loggers.AGENT.info("Starting Boncode analysis");
+		logger.log(new LogEntry("Starting Boncode analysis"));
 		//logger.info("Starting Boncode analysis...");
 
-		new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, this).perform(sourceRoot);
+		new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, logger).perform(sourceRoot);
 
 	}
 
 	public boolean isInterrupted() {
-		Loggers.AGENT.info("isInterrupted invoked");
+		logger.log(new LogEntry("isInterrupted invoked"));
 		return false;
 	}
 
 	public boolean isFinished() {
-		Loggers.AGENT.info("isFinished invoked");
+		logger.log(new LogEntry("isFinished invoked"));
 		return false;
 	}
 
 	public void interrupt() {
-		Loggers.AGENT.info("interrupt invoked");
+		logger.log(new LogEntry("interrupt invoked"));
 	}
 
 	@NotNull
 	public BuildFinishedStatus waitFor() throws RunBuildException {
-		Loggers.AGENT.info("waitFor invoked");
+		logger.log(new LogEntry("waitFor invoked"));
 
 		return BuildFinishedStatus.FINISHED_SUCCESS;
 	}
 
-	public void log(LogEntry entry) {
-
-		Loggers.AGENT.info(entry.toString());
-
-		//To change body of implemented methods use File | Settings | File Templates.
-	}
-
-	public String getStatus() {
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
-	}
-
-	public void addAppender(org.ijsberg.iglu.logging.Logger appender) {
-		//To change body of implemented methods use File | Settings | File Templates.
-	}
-
-	public void removeAppender(org.ijsberg.iglu.logging.Logger appender) {
-		//To change body of implemented methods use File | Settings | File Templates.
-	}
 }
