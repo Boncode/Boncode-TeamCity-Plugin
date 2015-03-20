@@ -21,7 +21,9 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess, org.ijsberg.ig
 	private static final Logger logger = Logger.getLogger(BoncodeTeamCityBuildProcess.class);
 
 	private String monitorUploadDirectory;
-	private String analysisProperties;
+    private String monitorDownloadDirectory;
+
+    private String analysisProperties;
 	private String sourceRoot;
 	private String checkoutDir;
 
@@ -38,7 +40,9 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess, org.ijsberg.ig
 		checkoutDir = context.getBuild().getCheckoutDirectory().getAbsolutePath();
 		sourceRoot = checkoutDir + "/" + buildParameters.get(BuildServerToMonitorLink.SOURCE_ROOT);
 		monitorUploadDirectory = buildParameters.get(BuildServerToMonitorLink.MONITOR_UPLOAD_DIRECTORY);
-		analysisProperties = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
+        monitorDownloadDirectory = buildParameters.get(BuildServerToMonitorLink.MONITOR_DOWNLOAD_DIRECTORY);
+
+        analysisProperties = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
 
 		BuildServerToMonitorLink.throwIfPropertiesNotOk(
 				analysisProperties,
@@ -50,7 +54,7 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess, org.ijsberg.ig
 		Loggers.AGENT.info("Starting Boncode analysis");
 		//logger.info("Starting Boncode analysis...");
 
-		new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, this).perform(sourceRoot);
+		new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, monitorDownloadDirectory, this).perform(sourceRoot);
 
 	}
 
