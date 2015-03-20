@@ -6,8 +6,8 @@ import jetbrains.buildServer.agent.BuildProcess;
 import jetbrains.buildServer.agent.BuildRunnerContext;
 import jetbrains.buildServer.log.Loggers;
 import nl.ijsberg.analysis.server.buildserver.BuildServerToMonitorLink;
+import org.apache.log4j.Logger;
 import org.ijsberg.iglu.logging.LogEntry;
-import org.ijsberg.iglu.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -18,12 +18,14 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 
 	private BuildRunnerContext context;
 
+	private static final Logger logger = Logger.getLogger(BoncodeTeamCityBuildProcess.class);
+
 	private String monitorUploadDirectory;
-	private String analysisProperties;
+    private String monitorDownloadDirectory;
+
+    private String analysisProperties;
 	private String sourceRoot;
 	private String checkoutDir;
-	
-	private Logger logger;
 
 
 
@@ -39,7 +41,9 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 		checkoutDir = context.getBuild().getCheckoutDirectory().getAbsolutePath();
 		sourceRoot = checkoutDir + "/" + buildParameters.get(BuildServerToMonitorLink.SOURCE_ROOT);
 		monitorUploadDirectory = buildParameters.get(BuildServerToMonitorLink.MONITOR_UPLOAD_DIRECTORY);
-		analysisProperties = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
+        monitorDownloadDirectory = buildParameters.get(BuildServerToMonitorLink.MONITOR_DOWNLOAD_DIRECTORY);
+
+        analysisProperties = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
 
 		BuildServerToMonitorLink.throwIfPropertiesNotOk(
 				analysisProperties,
@@ -51,7 +55,12 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 		logger.log(new LogEntry("Starting Boncode analysis"));
 		//logger.info("Starting Boncode analysis...");
 
-		new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, logger).perform(sourceRoot);
+        boolean result = new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, monitorDownloadDirectory, this).perform(sourceRoot);
+        if(result){
+            this.isFinished();
+        } else {
+            this.isInterrupted();
+        }
 
 	}
 
