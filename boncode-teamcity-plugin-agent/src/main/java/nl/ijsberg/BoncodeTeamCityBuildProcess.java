@@ -4,10 +4,9 @@ import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.BuildFinishedStatus;
 import jetbrains.buildServer.agent.BuildProcess;
 import jetbrains.buildServer.agent.BuildRunnerContext;
-import jetbrains.buildServer.log.Loggers;
 import nl.ijsberg.analysis.server.buildserver.BuildServerToMonitorLink;
-import org.apache.log4j.Logger;
 import org.ijsberg.iglu.logging.LogEntry;
+import org.ijsberg.iglu.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -18,8 +17,6 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 
 	private BuildRunnerContext context;
 
-	private static final Logger logger = Logger.getLogger(BoncodeTeamCityBuildProcess.class);
-
 	private String monitorUploadDirectory;
     private String monitorDownloadDirectory;
 
@@ -27,9 +24,11 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 	private String sourceRoot;
 	private String checkoutDir;
 
+	private Logger logger;
 
 
-	public BoncodeTeamCityBuildProcess(BuildRunnerContext context, Logger logger) {		
+
+	public BoncodeTeamCityBuildProcess(BuildRunnerContext context, Logger logger) {
 		this.context = context;
 		this.logger = logger;
 		Map<String, String> configParameters = context.getConfigParameters();
@@ -55,7 +54,7 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 		logger.log(new LogEntry("Starting Boncode analysis"));
 		//logger.info("Starting Boncode analysis...");
 
-        boolean result = new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, monitorDownloadDirectory, this).perform(sourceRoot);
+        boolean result = new BuildServerToMonitorLink(analysisProperties, monitorUploadDirectory, monitorDownloadDirectory, logger).perform(sourceRoot);
         if(result){
             this.isFinished();
         } else {
