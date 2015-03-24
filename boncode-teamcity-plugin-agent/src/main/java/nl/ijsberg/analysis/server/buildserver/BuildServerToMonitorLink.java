@@ -1,5 +1,6 @@
 package nl.ijsberg.analysis.server.buildserver;
 
+import nl.ijsberg.codeanalysis.tool.AnalysisConfig;
 import org.ijsberg.iglu.configuration.ConfigurationException;
 import org.ijsberg.iglu.logging.Level;
 import org.ijsberg.iglu.logging.LogEntry;
@@ -12,11 +13,16 @@ import org.ijsberg.iglu.util.io.ZipFileStreamProvider;
 import org.ijsberg.iglu.util.misc.StringSupport;
 import org.ijsberg.iglu.util.properties.PropertiesSupport;
 
+
+import javax.servlet.ServletException;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+
+
 
 /**
  */
@@ -25,21 +31,31 @@ public class BuildServerToMonitorLink {
 	private String customerId;
 	private String projectId;
 	private final String monitorUploadDirectory;
+	private final String monitorDownloadDirectory;
+
 	private final String analysisProperties;
 	private final Properties properties = new Properties();
-	
+
 	private Logger logger;
+
+
+
+	private int timeOutLoops=1000;
 
 	public static final String SNAPSHOT_TIMESTAMP_FORMAT = "yyyyMMdd_HH_mm";
 
-	public BuildServerToMonitorLink(String analysisProperties, String monitorUploadDirectory, Logger logger) {
+
+	public BuildServerToMonitorLink(String analysisProperties, String monitorUploadDirectory, String monitorDownloadDirectory, Logger logger) {
 		this.logger = logger;
 		this.monitorUploadDirectory = monitorUploadDirectory;
+		this.monitorDownloadDirectory = monitorDownloadDirectory;
 		this.analysisProperties = analysisProperties;
+		File currentDirectory = new File(new File(".").getAbsolutePath());
+
 		try {
 			loadProperties(analysisProperties);
 		} catch (IOException e) {
-			throw new ConfigurationException("properties in " + analysisProperties + " cannot be loaded");
+			throw new ConfigurationException("properties in file:  " + analysisProperties + " in " + currentDirectory.getAbsolutePath() + " cannot be loaded");
 		}
 	}
 
@@ -68,6 +84,9 @@ public class BuildServerToMonitorLink {
 		inputStream.close();
 	}
 
+	public void setTimeOutLoops(int timeOutLoops) {
+		this.timeOutLoops = timeOutLoops;
+	}
 	/**
 	 * We'll use this from the <tt>config.jelly</tt>.
 	 */
@@ -82,6 +101,8 @@ public class BuildServerToMonitorLink {
 	public String getMonitorUploadDirectory() {
 		return monitorUploadDirectory;
 	}
+
+	public String getMonitorDownloadDirectory() { return monitorDownloadDirectory;}
 
 	public String getAnalysisProperties() {
 		return analysisProperties;
@@ -110,10 +131,21 @@ public class BuildServerToMonitorLink {
 			logger.log(new LogEntry("ERROR: " + uploadDirectory.getAbsolutePath() + " is not a directory"));
 			return false;
 		}
+
+		File downloadDirectory = new File(monitorDownloadDirectory);
+		if(!downloadDirectory.exists()) {
+			logger.log(new LogEntry("ERROR: download directory " + downloadDirectory.getAbsolutePath() + " does not exist or is not accessible"));
+			return false;
+		}
+		if(!downloadDirectory.isDirectory()) {
+			logger.log(new LogEntry("ERROR: " + downloadDirectory.getAbsolutePath() + " is not a directory"));
+			return false;
+		}
+
 		//String workSpacePath = build.getWorkspace().getRemote();
 		logger.log(new LogEntry("zipping sources from " + workSpacePath + " to " + uploadDirectory.getAbsolutePath()));
-
-		String destfileName = monitorUploadDirectory + "/" + getSnapshotZipfileName(customerId, projectId, new Date());
+		Date snapshotDate = new Date();
+		String destfileName = monitorUploadDirectory + "/" + getSnapshotZipfileName(customerId, projectId, snapshotDate);
 		try {
 			zipSources(workSpacePath, destfileName);
 		} catch (IOException e) {
@@ -124,6 +156,41 @@ public class BuildServerToMonitorLink {
 		logger.log(new LogEntry("DONE ... created snapshot " + destfileName));
 
 		logStream = System.out;
+
+
+		return waitForFinishedAnalysis(snapshotDate);
+
+	}
+
+	public boolean waitForFinishedAnalysis(Date snapshotDate) {
+		AnalysisConfig analysisConfig = new AnalysisConfig(properties,"bogus");
+		Set<String> languages = analysisConfig.getLanguageNames();
+
+		boolean foundAnalysis = false;
+		int maxLoops = this.timeOutLoops;
+		while(!foundAnalysis){
+			foundAnalysis = true;
+			for (String language : languages) {
+				String analysisFileName = monitorDownloadDirectory + "/" + analysisConfig.getAnalysisName(language,snapshotDate) + ".zip";
+				logger.log( new LogEntry(Level.VERBOSE, "INFO: Check for file: " + analysisFileName));
+				File analysisFile = new File(analysisFileName);
+				if(!analysisFile.exists())
+					foundAnalysis = false;
+			}
+			try {
+				if(!foundAnalysis) Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				logger.log( new LogEntry(Level.VERBOSE, "WARNING: Interrupted exception while polling for analysis", e));
+			}
+			maxLoops--;
+			if(maxLoops<0)
+				break;
+		}
+		if(!foundAnalysis) {
+			logger.log( new LogEntry(Level.CRITICAL, "ERROR: Analysis are not found within timeframe"));
+			return false;
+		}
+		logger.log( new LogEntry(Level.VERBOSE, "SUCCESS: Analysis found"));
 
 		return true;
 	}
@@ -190,7 +257,6 @@ public class BuildServerToMonitorLink {
 	public static final String ANALYSIS_PROPERTIES_FILENAME = "analysisProperties";
 
 	public static ValidationResult checkAnalysisProperties(String value) {
-		//TODO value may be null
 		if (value.length() == 0)
 			return ValidationResult.notOk(ANALYSIS_PROPERTIES_FILENAME, "Please provide a path to the analysis properties file");
 		File file = new File(value);
@@ -218,6 +284,7 @@ public class BuildServerToMonitorLink {
 
 	public static final String SOURCE_ROOT = "sourceRoot";
 	public static final String MONITOR_UPLOAD_DIRECTORY = "monitorUploadDirectory";
+	public static final String MONITOR_DOWNLOAD_DIRECTORY = "monitorDownloadDirectory";
 
 	public static ValidationResult checkMonitorUploadDirectory(String value) {
 		return checkDirectory(MONITOR_UPLOAD_DIRECTORY, value);
