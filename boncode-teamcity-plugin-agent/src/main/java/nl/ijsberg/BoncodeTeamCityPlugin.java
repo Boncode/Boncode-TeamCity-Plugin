@@ -41,6 +41,7 @@ public class BoncodeTeamCityPlugin extends AgentLifeCycleAdapter implements Agen
 	@Override
 	public void buildStarted(AgentRunningBuild agentRunningBuild) {
 		buildProgressLogger = agentRunningBuild.getBuildLogger();
+		log(new LogEntry("build started"));
 	}
 
 	@Override
@@ -48,6 +49,7 @@ public class BoncodeTeamCityPlugin extends AgentLifeCycleAdapter implements Agen
 							  AgentRunningBuild build,
 							  @NotNull
 							  BuildFinishedStatus buildStatus) {
+		log(new LogEntry("build finished"));
 		buildProgressLogger = null;
 	}
 

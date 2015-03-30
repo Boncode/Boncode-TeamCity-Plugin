@@ -6,6 +6,7 @@ import jetbrains.buildServer.agent.BuildProcess;
 import jetbrains.buildServer.agent.BuildRunnerContext;
 import nl.ijsberg.analysis.server.buildserver.AnalysisPropertiesLoader;
 import nl.ijsberg.analysis.server.buildserver.BuildServerToMonitorLink;
+import nl.ijsberg.analysis.server.buildserver.ValidationResult;
 import org.ijsberg.iglu.configuration.ConfigurationException;
 import org.ijsberg.iglu.logging.LogEntry;
 import org.ijsberg.iglu.logging.Logger;
@@ -25,11 +26,11 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 	private String monitorUploadDirectory;
     private String monitorDownloadDirectory;
 
-    private String analysisProperties;
+    private String analysisPropertiesFileName;
 	private String sourceRoot;
 	private String checkoutDir;
 	private AnalysisPropertiesLoader analysisPropertiesLoader;
-	private String alternativePropertiesInSourceRoot;
+	private String alternativePropertiesInWorkingDir;
 
 	private Logger logger;
 	private BuildServerToMonitorLink buildServerToMonitorLink;
@@ -43,6 +44,8 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 		logger.log(new LogEntry("config parameters: " + configParameters));
 		logger.log(new LogEntry("build parameters: " + buildParameters));
 		logger.log(new LogEntry("Checkout dir: " + context.getBuild().getCheckoutDirectory()));
+		logger.log(new LogEntry("Project name: " + context.getBuild().getProjectName()));
+		logger.log(new LogEntry("Context name: " + context.getName()));
 
 		checkoutDir = context.getBuild().getCheckoutDirectory().getAbsolutePath();
 		sourceRoot = checkoutDir + "/" + buildParameters.get(BuildServerToMonitorLink.SOURCE_ROOT);
@@ -56,28 +59,33 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 			} catch (InstantiationException e) {
 				throw new ConfigurationException("cannot instantiate class found in property " + BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_LOADER, e);
 			}
-			alternativePropertiesInSourceRoot = buildParameters.get(BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_IN_SOURCE_ROOT);
-			BuildServerToMonitorLink.checkFile(
-					BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_IN_SOURCE_ROOT,
-					alternativePropertiesInSourceRoot,
+			alternativePropertiesInWorkingDir = buildParameters.get(BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_IN_WORKING_DIR);
+			ValidationResult result = BuildServerToMonitorLink.checkFile(
+					BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_IN_WORKING_DIR,
+					checkoutDir + "/" + alternativePropertiesInWorkingDir,
 					false);
+			if(!result.isOk()) {
+				throw new ConfigurationException("please provide a valid file with alternative properties: " + result.getLastMessage());
+			}
 		} else {
-			logger.log(new LogEntry("no value found for property " + BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_LOADER + " using standard properties loader"));
+			logger.log(new LogEntry("no v" +
+					"alue found for property " + BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_LOADER + " using standard properties loader"));
 		}
-        analysisProperties = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
+        analysisPropertiesFileName = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
 		BuildServerToMonitorLink.throwIfPropertiesNotOk(
-				analysisProperties,
+				analysisPropertiesFileName,
 				monitorUploadDirectory,
 				sourceRoot);
 		Properties properties = loadProperties();
+		logger.log(new LogEntry("performing analysis with properties: " + properties));
 		buildServerToMonitorLink = new BuildServerToMonitorLink(properties, monitorUploadDirectory, monitorDownloadDirectory, logger);
 	}
 
 	private Properties loadProperties() {
 		if(analysisPropertiesLoader != null) {
-			return analysisPropertiesLoader.load(analysisProperties, alternativePropertiesInSourceRoot);
+			return analysisPropertiesLoader.load(analysisPropertiesFileName, checkoutDir + "/" + alternativePropertiesInWorkingDir);
 		}
-		return PropertiesSupport.loadProperties(analysisProperties);
+		return PropertiesSupport.loadProperties(analysisPropertiesFileName);
 	}
 
 	public void start() throws RunBuildException {
