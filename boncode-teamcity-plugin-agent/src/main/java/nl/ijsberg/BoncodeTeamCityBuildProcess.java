@@ -8,6 +8,7 @@ import nl.ijsberg.analysis.server.buildserver.AnalysisPropertiesLoader;
 import nl.ijsberg.analysis.server.buildserver.BuildServerToMonitorLink;
 import nl.ijsberg.analysis.server.buildserver.ValidationResult;
 import org.ijsberg.iglu.configuration.ConfigurationException;
+import org.ijsberg.iglu.logging.Level;
 import org.ijsberg.iglu.logging.LogEntry;
 import org.ijsberg.iglu.logging.Logger;
 import org.ijsberg.iglu.util.properties.PropertiesSupport;
@@ -35,8 +36,10 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 	private Logger logger;
 	private BuildServerToMonitorLink buildServerToMonitorLink;
 
+	private boolean skipBuild = false;
 
 	public BoncodeTeamCityBuildProcess(BuildRunnerContext context, Logger logger) {
+
 		this.context = context;
 		this.logger = logger;
 		Map<String, String> configParameters = context.getConfigParameters();
@@ -65,11 +68,13 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 					checkoutDir + "/" + alternativePropertiesInWorkingDir,
 					false);
 			if(!result.isOk()) {
-				throw new ConfigurationException("please provide a valid file with alternative properties: " + result.getLastMessage());
+//				throw new ConfigurationException("please provide a valid file with alternative properties: " + result.getLastMessage());
+				logger.log(new LogEntry(Level.CRITICAL, "please provide a valid file with alternative properties: " + result.getLastMessage()));
+				skipBuild = true;
+				return;
 			}
 		} else {
-			logger.log(new LogEntry("no v" +
-					"alue found for property " + BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_LOADER + " using standard properties loader"));
+			logger.log(new LogEntry("no value found for property " + BuildServerToMonitorLink.ALTERNATIVE_PROPERTIES_LOADER + " using standard properties loader"));
 		}
         analysisPropertiesFileName = buildParameters.get(BuildServerToMonitorLink.ANALYSIS_PROPERTIES_FILENAME);
 		BuildServerToMonitorLink.throwIfPropertiesNotOk(
@@ -83,12 +88,18 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 
 	private Properties loadProperties() {
 		if(analysisPropertiesLoader != null) {
-			return analysisPropertiesLoader.load(analysisPropertiesFileName, checkoutDir + "/" + alternativePropertiesInWorkingDir);
+			logger.log(new LogEntry("loading alternative properties using " + analysisPropertiesLoader.getClass()));
+			Properties properties =  analysisPropertiesLoader.load(analysisPropertiesFileName, checkoutDir + "/" + alternativePropertiesInWorkingDir);
+			return properties;
 		}
 		return PropertiesSupport.loadProperties(analysisPropertiesFileName);
 	}
 
 	public void start() throws RunBuildException {
+		if(skipBuild) {
+			logger.log(new LogEntry("Skipping Boncode analysis"));
+			return;
+		}
 		logger.log(new LogEntry("Starting Boncode analysis"));
         boolean result = buildServerToMonitorLink.perform(sourceRoot);
         if(result){
