@@ -11,7 +11,7 @@ import org.ijsberg.iglu.configuration.ConfigurationException;
 import org.ijsberg.iglu.logging.Level;
 import org.ijsberg.iglu.logging.LogEntry;
 import org.ijsberg.iglu.logging.Logger;
-import org.ijsberg.iglu.util.properties.PropertiesSupport;
+import org.ijsberg.iglu.util.properties.IgluProperties;
 import org.ijsberg.iglu.util.reflection.ReflectionSupport;
 import org.jetbrains.annotations.NotNull;
 import java.util.Properties;
@@ -92,7 +92,7 @@ public class BoncodeTeamCityBuildProcess implements BuildProcess {
 			Properties properties =  analysisPropertiesLoader.load(analysisPropertiesFileName, checkoutDir + "/" + alternativePropertiesInWorkingDir);
 			return properties;
 		}
-		return PropertiesSupport.loadProperties(analysisPropertiesFileName);
+		return IgluProperties.loadProperties(analysisPropertiesFileName);
 	}
 
 	public void start() throws RunBuildException {
