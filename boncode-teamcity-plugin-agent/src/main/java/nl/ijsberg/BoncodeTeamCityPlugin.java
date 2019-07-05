@@ -2,8 +2,6 @@ package nl.ijsberg;
 
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.*;
-import jetbrains.buildServer.agent.runner.BuildServiceAdapter;
-import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.BuildMessage1;
 import jetbrains.buildServer.messages.Status;
@@ -61,11 +59,7 @@ public class BoncodeTeamCityPlugin extends AgentLifeCycleAdapter implements Agen
 		}
 	}
 
-	public String getStatus() {
-		return null;
-	}
-
-	public void addAppender(Logger appender) {
+    public void addAppender(Logger appender) {
 	}
 
 	public void removeAppender(Logger appender) {
